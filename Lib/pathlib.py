@@ -57,9 +57,6 @@ class _Flavour(object):
     """A flavour implements a particular (platform-specific) set of path
     semantics."""
 
-    def __init__(self):
-        self.join = self.sep.join
-
     def parse_parts(self, parts):
         parsed = []
         sep = self.sep
@@ -276,9 +273,9 @@ class _WindowsFlavour(_Flavour):
                                        "for %r" % username)
                 parts[-1] = username
                 if drv or root:
-                    userhome = drv + root + self.join(parts[1:])
+                    userhome = drv + root + self.sep.join(parts[1:])
                 else:
-                    userhome = self.join(parts)
+                    userhome = self.sep.join(parts)
         return userhome
 
 class _PosixFlavour(_Flavour):
@@ -721,13 +718,13 @@ class PurePath(object):
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
-            return drv + root + cls._flavour.join(parts[1:])
+            return drv + root + cls._flavour.sep.join(parts[1:])
         else:
-            return cls._flavour.join(parts)
+            return cls._flavour.sep.join(parts)
 
     def _make_child(self, args):
         drv, root, parts = self._parse_args(args)
-        drv, root, parts = self._flavour.join_parsed_parts(
+        drv, root, parts = self._flavour.sep.join_parsed_parts(
             self._drv, self._root, self._parts, drv, root, parts)
         return self._from_parsed_parts(drv, root, parts)
 
