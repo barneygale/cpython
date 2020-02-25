@@ -346,34 +346,22 @@ class _Accessor:
     accessing paths on the filesystem."""
 
 class _NormalAccessor(_Accessor):
-
     open = io.open
-
     stat = os.stat
-
     scandir = os.scandir
-
-    chmod = os.chmod
-
-    mkdir = os.mkdir
-
-    unlink = os.unlink
-
-    link = os.link
-
-    rmdir = os.rmdir
-
-    rename = os.rename
-
-    replace = os.replace
-
-    symlink = os.symlink
-
     readlink = os.readlink
-
+    symlink = os.symlink
+    link = os.link
+    mkdir = os.mkdir
+    rmdir = os.rmdir
+    unlink = os.unlink
+    rename = os.rename
+    replace = os.replace
+    chmod = os.chmod
     getcwd = os.getcwd
-
     expanduser = os.path.expanduser
+    fsencode = os.fsencode
+    fspath = str
 
     def owner(self, path):
         try:
@@ -406,10 +394,6 @@ class _NormalAccessor(_Accessor):
             flags |= os.O_EXCL
         fd = os.open(path, flags, mode)
         os.close(fd)
-
-    fspath = str
-
-    fsencode = os.fsencode
 
 _normal_accessor = _NormalAccessor()
 
