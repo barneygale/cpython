@@ -348,23 +348,17 @@ class _Accessor:
 
 class _NormalAccessor(_Accessor):
 
-    stat = os.stat
 
-    lstat = os.lstat
 
     open = io.open
+
+    stat = os.stat
 
     listdir = os.listdir
 
     scandir = os.scandir
 
     chmod = os.chmod
-
-    if hasattr(os, "lchmod"):
-        lchmod = os.lchmod
-    else:
-        def lchmod(self, pathobj, mode):
-            raise NotImplementedError("lchmod() not available on this system")
 
     mkdir = os.mkdir
 
@@ -1284,7 +1278,7 @@ class Path(PurePath):
         Like chmod(), except if the path points to a symlink, the symlink's
         permissions are changed, rather than its target's.
         """
-        self._accessor.lchmod(self, mode)
+        self._accessor.chmod(self, mode, follow_symlinks=False)
 
     def unlink(self, missing_ok=False):
         """
@@ -1308,7 +1302,7 @@ class Path(PurePath):
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
-        return self._accessor.lstat(self)
+        return self._accessor.stat(self, follow_symlinks=False)
 
     def link_to(self, target):
         """
