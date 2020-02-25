@@ -480,6 +480,8 @@ class _NormalAccessor(_Accessor):
 
     fspath = str
 
+    fsencode = os.fsencode
+
 _normal_accessor = _NormalAccessor()
 
 
@@ -748,11 +750,6 @@ class PurePath(object):
         slashes."""
         f = self._flavour
         return str(self).replace(f.sep, '/')
-
-    def __bytes__(self):
-        """Return the bytes representation of the path.  This is only
-        recommended to use under Unix."""
-        return os.fsencode(self)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -1094,6 +1091,11 @@ class Path(PurePath):
 
     def __fspath__(self):
         return self._accessor.fspath(self)
+
+    def __bytes__(self):
+        """Return the bytes representation of the path.  This is only
+        recommended to use under Unix."""
+        return self._accessor.fsencode(self)
 
     def samefile(self, other_path):
         """Return whether other_path is the same or not as this file
