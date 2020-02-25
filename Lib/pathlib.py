@@ -341,7 +341,7 @@ _windows_flavour = _WindowsFlavour()
 _posix_flavour = _PosixFlavour()
 
 
-class _Accessor:
+class AbstractAccessor:
     """
     An accessor implements a particular (system-specific or not) way of
     accessing paths on the filesystem.
@@ -405,7 +405,10 @@ class _Accessor:
     def group(self, path):
         raise NotImplementedError
 
-class _NormalAccessor(_Accessor):
+abstract_accessor = AbstractAccessor()
+
+
+class NormalAccessor(AbstractAccessor):
     open = io.open
     stat = os.stat
     scandir = os.scandir
@@ -455,7 +458,7 @@ class _NormalAccessor(_Accessor):
         fd = os.open(path, flags, mode)
         os.close(fd)
 
-_normal_accessor = _NormalAccessor()
+normal_accessor = NormalAccessor()
 
 
 #
@@ -1019,25 +1022,15 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class Path(PurePath):
-    """PurePath subclass that can make system calls.
-
-    Path represents a filesystem path but unlike PurePath, also offers
-    methods to do system calls on path objects. Depending on your system,
-    instantiating a Path will return either a PosixPath or a WindowsPath
-    object. You can also instantiate a PosixPath or WindowsPath directly,
-    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
-    """
-    _accessor = _normal_accessor
+class UserPath(PurePath):
+    _accessor = abstract_accessor
     __slots__ = ()
 
-    def __new__(cls, *args, **kwargs):
-        if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
+    def __new__(cls, *args):
         self = cls._from_parts(args)
-        if not self._flavour.is_supported:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
+        if self._accessor is abstract_accessor:
+            raise NotImplementedError(
+                "Cannot instantiate a UserPath with an abstract accessor.")
         return self
 
     def _make_child_relpath(self, part):
@@ -1467,6 +1460,26 @@ class Path(PurePath):
 
         return self
 
+class Path(UserPath):
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
+    methods to do system calls on path objects. Depending on your system,
+    instantiating a Path will return either a PosixPath or a WindowsPath
+    object. You can also instantiate a PosixPath or WindowsPath directly,
+    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    """
+    _accessor = normal_accessor
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Path:
+            cls = WindowsPath if os.name == 'nt' else PosixPath
+        self = cls._from_parts(args)
+        if not self._flavour.is_supported:
+            raise NotImplementedError("cannot instantiate %r on your system"
+                                      % (cls.__name__,))
+        return self
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
