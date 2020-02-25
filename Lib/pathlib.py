@@ -345,10 +345,7 @@ class _Accessor:
     """An accessor implements a particular (system-specific or not) way of
     accessing paths on the filesystem."""
 
-
 class _NormalAccessor(_Accessor):
-
-
 
     open = io.open
 
@@ -363,10 +360,10 @@ class _NormalAccessor(_Accessor):
     unlink = os.unlink
 
     if hasattr(os, "link"):
-        link_to = os.link
+        link = os.link
     else:
         @staticmethod
-        def link_to(self, target):
+        def link(self, target):
             raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
@@ -1303,7 +1300,7 @@ class Path(PurePath):
         """
         Create a hard link pointing to a path named target.
         """
-        self._accessor.link_to(self, target)
+        self._accessor.link(self, target)
 
     def rename(self, target):
         """
