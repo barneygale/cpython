@@ -193,7 +193,7 @@ class _WindowsFlavour(_Flavour):
     def resolve(self, path, strict=False):
         s = str(path)
         if not s:
-            return os.getcwd()
+            return path._accessor.getcwd()
         previous_s = None
         if _getfinalpathname is not None:
             if strict:
@@ -355,7 +355,7 @@ class _PosixFlavour(_Flavour):
             return path
         # NOTE: according to POSIX, getcwd() cannot contain path components
         # which are symlinks.
-        base = '' if path.is_absolute() else os.getcwd()
+        base = '' if path.is_absolute() else accessor.getcwd()
         return _resolve(base, str(path)) or sep
 
     def is_reserved(self, parts):
@@ -447,6 +447,7 @@ class _NormalAccessor(_Accessor):
     def readlink(self, path):
         return os.readlink(path)
 
+    getcwd = os.getcwd
 
 _normal_accessor = _NormalAccessor()
 
@@ -1096,7 +1097,7 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(os.getcwd())
+        return cls(cls()._accessor.getcwd())
 
     @classmethod
     def home(cls):
@@ -1171,7 +1172,8 @@ class Path(PurePath):
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
         # use nt._getfullpathname())
-        obj = self._from_parts([os.getcwd()] + self._parts, init=False)
+        parts = [self._accessor.getcwd()] + self._parts
+        obj = self._from_parts(parts, init=False)
         obj._init(template=self)
         return obj
 
