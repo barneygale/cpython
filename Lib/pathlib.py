@@ -342,8 +342,68 @@ _posix_flavour = _PosixFlavour()
 
 
 class _Accessor:
-    """An accessor implements a particular (system-specific or not) way of
-    accessing paths on the filesystem."""
+    """
+    An accessor implements a particular (system-specific or not) way of
+    accessing paths on the filesystem.
+    """
+
+    def open(self, path, mode="r", buffering=-1, encoding=None, errors=None,
+             newline=None):
+        raise NotImplementedError
+
+    def stat(self, path, *, follow_symlinks=True):
+        raise NotImplementedError
+
+    def scandir(self, path):
+        raise NotImplementedError
+
+    def readlink(self, path):
+        raise NotImplementedError
+
+    def touch(self, path, mode=0o666, exist_ok=True):
+        raise NotImplementedError
+
+    def symlink(self, target, path, target_is_directory=False):
+        raise NotImplementedError
+
+    def link(self, target, path, *, follow_symlinks=True):
+        raise NotImplementedError
+
+    def mkdir(self, path, mode=0o777):
+        raise NotImplementedError
+
+    def rmdir(self, path):
+        raise NotImplementedError
+
+    def unlink(self, path):
+        raise NotImplementedError
+
+    def rename(self, path, dest):
+        raise NotImplementedError
+
+    def replace(self, path, dest):
+        raise NotImplementedError
+
+    def chmod(self, path, mode, *, follow_symlinks=True):
+        raise NotImplementedError
+
+    def getcwd(self):
+        raise NotImplementedError
+
+    def expanduser(self, path):
+        raise NotImplementedError
+
+    def fsencode(self, path):
+        raise NotImplementedError
+
+    def fspath(self, path):
+        raise NotImplementedError
+
+    def owner(self, path):
+        raise NotImplementedError
+
+    def group(self, path):
+        raise NotImplementedError
 
 class _NormalAccessor(_Accessor):
     open = io.open
