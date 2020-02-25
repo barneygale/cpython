@@ -422,8 +422,8 @@ class NormalAccessor(AbstractAccessor):
     replace = os.replace
     chmod = os.chmod
     getcwd = os.getcwd
-    expanduser = os.path.expanduser
-    fsencode = os.fsencode
+    expanduser = staticmethod(os.path.expanduser)
+    fsencode = staticmethod(os.fsencode)
     fspath = str
 
     def owner(self, path):
@@ -704,7 +704,7 @@ class PurePath(object):
 
     def _make_child(self, args):
         drv, root, parts = self._parse_args(args)
-        drv, root, parts = self._flavour.sep.join_parsed_parts(
+        drv, root, parts = self._flavour.join_parsed_parts(
             self._drv, self._root, self._parts, drv, root, parts)
         return self._from_parsed_parts(drv, root, parts)
 
@@ -726,6 +726,11 @@ class PurePath(object):
         slashes."""
         f = self._flavour
         return str(self).replace(f.sep, '/')
+
+    def __bytes__(self):
+        """Return the bytes representation of the path.  This is only
+        recommended to use under Unix."""
+        return os.fsencode(self)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())

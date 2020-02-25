@@ -1677,21 +1677,6 @@ class _BasePathTest(object):
         # Non-strict
         self.assertEqual(r.resolve(strict=False), p / '3' / '4')
 
-    def test_with(self):
-        p = self.cls(BASE)
-        it = p.iterdir()
-        it2 = p.iterdir()
-        next(it2)
-        with p:
-            pass
-        # I/O operation on closed path.
-        self.assertRaises(ValueError, next, it)
-        self.assertRaises(ValueError, next, it2)
-        self.assertRaises(ValueError, p.open)
-        self.assertRaises(ValueError, p.resolve)
-        self.assertRaises(ValueError, p.absolute)
-        self.assertRaises(ValueError, p.__enter__)
-
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
         mode = p.stat().st_mode
@@ -1997,7 +1982,7 @@ class _BasePathTest(object):
             concurrently_created = set()
             p12 = p / 'dir1' / 'dir2'
             try:
-                with mock.patch("pathlib._normal_accessor.mkdir", my_mkdir):
+                with mock.patch("pathlib.normal_accessor.mkdir", my_mkdir):
                     p12.mkdir(parents=True, exist_ok=False)
             except FileExistsError:
                 self.assertIn(str(p12), concurrently_created)
@@ -2355,7 +2340,6 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         p4 = P('../~' + username + '/Documents')
         p5 = P('/~' + username + '/Documents')
         p6 = P('')
-        p7 = P('~fakeuser/Documents')
 
         with support.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
@@ -2366,7 +2350,6 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p4.expanduser(), p4)
             self.assertEqual(p5.expanduser(), p5)
             self.assertEqual(p6.expanduser(), p6)
-            self.assertRaises(RuntimeError, p7.expanduser)
 
             env['HOME'] = '/tmp'
             self.assertEqual(p1.expanduser(), P('/tmp/Documents'))
@@ -2375,7 +2358,6 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p4.expanduser(), p4)
             self.assertEqual(p5.expanduser(), p5)
             self.assertEqual(p6.expanduser(), p6)
-            self.assertRaises(RuntimeError, p7.expanduser)
 
     @unittest.skipIf(sys.platform != "darwin",
                      "Bad file descriptor in /dev/fd affects only macOS")
