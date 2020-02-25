@@ -354,8 +354,6 @@ class _NormalAccessor(_Accessor):
 
     stat = os.stat
 
-    listdir = os.listdir
-
     scandir = os.scandir
 
     chmod = os.chmod
@@ -1109,11 +1107,8 @@ class Path(PurePath):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
         """
-        for name in self._accessor.listdir(self):
-            if name in {'.', '..'}:
-                # Yielding a path object for these makes little sense
-                continue
-            yield self._make_child_relpath(name)
+        for entry in self._accessor.scandir(self):
+            yield self._make_child_relpath(entry.name)
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
