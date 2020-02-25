@@ -1395,9 +1395,8 @@ class Path(PurePath):
         if not self.exists() or not self.is_dir():
             return False
 
-        parent = Path(self.parent)
         try:
-            parent_dev = parent.stat().st_dev
+            parent_dev = self.parent.stat().st_dev
         except OSError:
             return False
 
@@ -1405,7 +1404,7 @@ class Path(PurePath):
         if dev != parent_dev:
             return True
         ino = self.stat().st_ino
-        parent_ino = parent.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
         return ino == parent_ino
 
     def is_symlink(self):
@@ -1512,6 +1511,3 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def is_mount(self):
-        raise NotImplementedError("Path.is_mount() is unsupported on this system")
