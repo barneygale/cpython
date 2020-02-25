@@ -375,20 +375,18 @@ class _NormalAccessor(_Accessor):
 
     expanduser = os.path.expanduser
 
-    def getowner(self, path):
+    def owner(self, path):
         try:
             import pwd
         except ImportError:
-            raise NotImplementedError(
-                "Query a path owner is unsupported on this system")
+            raise NotImplementedError
         return pwd.getpwuid(self.stat(path).st_uid).pw_name
 
-    def getgroup(self, path):
+    def group(self, path):
         try:
             import grp
         except ImportError:
-            raise NotImplementedError(
-                "Query a path group is unsupported on this system")
+            raise NotImplementedError
         return grp.getgrgid(self.stat(path).st_gid).gr_name
 
     def touch(self, path, mode=0o666, exist_ok=True):
@@ -1117,13 +1115,13 @@ class Path(PurePath):
         """
         Return the login name of the file owner.
         """
-        return self._accessor.getowner(self)
+        return self._accessor.owner(self)
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        return self._accessor.getgroup(self)
+        return self._accessor.group(self)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
