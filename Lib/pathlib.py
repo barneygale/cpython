@@ -395,7 +395,7 @@ class _NormalAccessor(_Accessor):
 
     lstat = os.lstat
 
-    open = os.open
+    open = io.open
 
     listdir = os.listdir
 
@@ -1074,10 +1074,6 @@ class Path(PurePath):
         parts = self._parts + [part]
         return self._from_parsed_parts(self._drv, self._root, parts)
 
-    def _opener(self, name, flags, mode=0o666):
-        # A stub for the opener argument to built-in open()
-        return self._accessor.open(self, flags, mode)
-
     # Public API
 
     @classmethod
@@ -1200,8 +1196,8 @@ class Path(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        return io.open(self, mode, buffering, encoding, errors, newline,
-                       opener=self._opener)
+        return self._accessor.open(self, mode, buffering, encoding, errors,
+                                   newline)
 
     def read_bytes(self):
         """
