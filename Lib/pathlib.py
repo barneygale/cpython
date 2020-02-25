@@ -478,6 +478,8 @@ class _NormalAccessor(_Accessor):
         fd = os.open(path, flags, mode)
         os.close(fd)
 
+    fspath = str
+
 _normal_accessor = _NormalAccessor()
 
 
@@ -1089,6 +1091,9 @@ class Path(PurePath):
         returned by os.path.expanduser('~')).
         """
         return cls(cls()._flavour.gethomedir(None))
+
+    def __fspath__(self):
+        return self._accessor.fspath(self)
 
     def samefile(self, other_path):
         """Return whether other_path is the same or not as this file
