@@ -359,12 +359,7 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
-    if hasattr(os, "link"):
-        link = os.link
-    else:
-        @staticmethod
-        def link(self, target):
-            raise NotImplementedError("os.link() not available on this system")
+    link = os.link
 
     rmdir = os.rmdir
 
@@ -372,21 +367,9 @@ class _NormalAccessor(_Accessor):
 
     replace = os.replace
 
-    if nt:
-        if supports_symlinks:
-            symlink = os.symlink
-        else:
-            def symlink(a, b, target_is_directory):
-                raise NotImplementedError("symlink() not available on this system")
-    else:
-        # Under POSIX, os.symlink() takes two args
-        @staticmethod
-        def symlink(a, b, target_is_directory):
-            return os.symlink(a, b)
+    symlink = os.symlink
 
-    # Helper for resolve()
-    def readlink(self, path):
-        return os.readlink(path)
+    readlink = os.readlink
 
     getcwd = os.getcwd
 
