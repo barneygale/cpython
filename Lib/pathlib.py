@@ -449,6 +449,22 @@ class _NormalAccessor(_Accessor):
 
     getcwd = os.getcwd
 
+    def getowner(self, path):
+        try:
+            import pwd
+        except ImportError:
+            raise NotImplementedError(
+                "Query a path owner is unsupported on this system")
+        return pwd.getpwuid(self.stat(path).st_uid).pw_name
+
+    def getgroup(self, path):
+        try:
+            import grp
+        except ImportError:
+            raise NotImplementedError(
+                "Query a path group is unsupported on this system")
+        return grp.getgrgid(self.stat(path).st_gid).gr_name
+
 _normal_accessor = _NormalAccessor()
 
 
@@ -1164,15 +1180,13 @@ class Path(PurePath):
         """
         Return the login name of the file owner.
         """
-        import pwd
-        return pwd.getpwuid(self.stat().st_uid).pw_name
+        return self._accessor.getowner(self)
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        import grp
-        return grp.getgrgid(self.stat().st_gid).gr_name
+        return self._accessor.getgroup(self)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1504,12 +1518,6 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def owner(self):
-        raise NotImplementedError("Path.owner() is unsupported on this system")
-
-    def group(self):
-        raise NotImplementedError("Path.group() is unsupported on this system")
 
     def is_mount(self):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")
