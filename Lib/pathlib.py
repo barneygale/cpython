@@ -422,8 +422,6 @@ class AbstractAccessor(object):
     def group(self, path):
         raise NotImplementedError
 
-abstract_accessor = AbstractAccessor()
-
 
 class NormalAccessor(AbstractAccessor):
     open = io.open
@@ -1050,14 +1048,14 @@ class PureWindowsPath(PurePath):
 
 
 class UserPath(PurePath):
-    _accessor = abstract_accessor
+    _accessor = None
     __slots__ = ()
 
     def __new__(cls, *args):
         self = cls._from_parts(args)
-        if self._accessor is abstract_accessor:
+        if self._accessor is None:
             raise NotImplementedError(
-                "Cannot instantiate a UserPath with an abstract accessor.")
+                "Cannot instantiate a UserPath without an accessor.")
         return self
 
     def _make_child_relpath(self, part):
