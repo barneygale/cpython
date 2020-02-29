@@ -422,9 +422,14 @@ class NormalAccessor(AbstractAccessor):
     replace = os.replace
     chmod = os.chmod
     getcwd = os.getcwd
-    expanduser = staticmethod(os.path.expanduser)
     fsencode = staticmethod(os.fsencode)
     fspath = str
+
+    def expanduser(self, path):
+        path = os.path.expanduser(path)
+        if path[:1] == '~':
+            raise RuntimeError("Can't determine home directory")
+        return path
 
     def owner(self, path):
         try:

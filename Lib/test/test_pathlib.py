@@ -2340,6 +2340,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         p4 = P('../~' + username + '/Documents')
         p5 = P('/~' + username + '/Documents')
         p6 = P('')
+        p7 = P('~fakeuser/Documents')
 
         with support.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
@@ -2350,6 +2351,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p4.expanduser(), p4)
             self.assertEqual(p5.expanduser(), p5)
             self.assertEqual(p6.expanduser(), p6)
+            self.assertRaises(RuntimeError, p7.expanduser)
 
             env['HOME'] = '/tmp'
             self.assertEqual(p1.expanduser(), P('/tmp/Documents'))
@@ -2358,6 +2360,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p4.expanduser(), p4)
             self.assertEqual(p5.expanduser(), p5)
             self.assertEqual(p6.expanduser(), p6)
+            self.assertRaises(RuntimeError, p7.expanduser)
 
     @unittest.skipIf(sys.platform != "darwin",
                      "Bad file descriptor in /dev/fd affects only macOS")
