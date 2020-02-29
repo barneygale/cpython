@@ -341,11 +341,28 @@ _windows_flavour = _WindowsFlavour()
 _posix_flavour = _PosixFlavour()
 
 
-class AbstractAccessor:
+class AbstractAccessor(object):
     """
     An accessor implements a particular (system-specific or not) way of
     accessing paths on the filesystem.
     """
+
+    path_type = None
+
+    def __new__(cls, *args, **kwargs):
+        self = super(AbstractAccessor, cls).__new__(cls)
+
+        # If our accessor class defines a path type, set this accessor
+        # instance's path type to a subclass that binds this accessor. This
+        # allows users to call `MyPath = MyAccessor(...).path_type` to retrieve
+        # a path type bound to a particular accessor instance.
+        if self.path_type is not None:
+            self.path_type = type(
+                self.path_type.__name__,
+                (self.path_type,),
+                {"_accessor": self})
+
+        return self
 
     def open(self, path, mode="r", buffering=-1, encoding=None, errors=None,
              newline=None):
