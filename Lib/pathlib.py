@@ -1485,6 +1485,15 @@ class UserPath(PurePath):
 
         return self
 
+
+class UserPosixPath(UserPath, PurePosixPath):
+    __slots__ = ()
+
+
+class UserWindowsPath(UserPath, PureWindowsPath):
+    __slots__ = ()
+
+
 class Path(UserPath):
     """PurePath subclass that can make system calls.
 
