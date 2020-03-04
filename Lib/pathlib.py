@@ -1064,6 +1064,12 @@ class UserPath(PurePath):
         parts = self._parts + [part]
         return self._from_parsed_parts(self._drv, self._root, parts)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, t, v, tb):
+        pass
+
     # Public API
 
     @classmethod
