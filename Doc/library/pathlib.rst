@@ -1120,6 +1120,15 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+.. method:: Path.hardlink_to(target)
+
+   Make this path a hard link to the same file as *target*.
+
+   .. note::
+      The order of arguments (link, target) is the reverse
+      of :func:`os.link`'s.
+
+   .. versionadded:: 3.10
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
 
@@ -1144,13 +1153,16 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
 
-
 .. method:: Path.link_to(target)
 
-   Create a hard link pointing to a path named *target*.
+   Make *target* a hard link pointing to the same file as this path.
 
    .. versionadded:: 3.8
 
+   .. deprecated:: 3.10
+
+      This method is deprecated in favor of :meth:`Path.hardlink_to`, as its
+      argument order does not match that of :meth:`Path.symlink_to`.
 
 .. method:: Path.write_bytes(data)
 

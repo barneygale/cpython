@@ -6,6 +6,7 @@ import os
 import posixpath
 import re
 import sys
+import warnings
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
@@ -420,10 +421,10 @@ class _NormalAccessor(_Accessor):
     unlink = os.unlink
 
     if hasattr(os, "link"):
-        link_to = os.link
+        link = os.link
     else:
         @staticmethod
-        def link_to(self, target):
+        def link(src, dst):
             raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
@@ -1363,9 +1364,22 @@ class Path(PurePath):
 
     def link_to(self, target):
         """
-        Create a hard link pointing to a path named target.
+        Make *target* a hard link pointing to the same file as this path.
+
+        Deprecated since Python 3.10, use `hardlink_to()`.
         """
-        self._accessor.link_to(self, target)
+        warnings.warn("pathlib.Path.link_to() is deprecated as of 3.10, use "
+                      "pathlib.Path.hardlink_to() instead",
+                      DeprecationWarning)
+        self._accessor.link(self, target)
+
+    def hardlink_to(self, target):
+        """
+        Make this path a hard link pointing to the same file as *target*.
+
+        Note the order of arguments (self, target) is the reverse of os.link's.
+        """
+        self._accessor.link(target, self)
 
     def rename(self, target):
         """
