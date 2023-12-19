@@ -73,7 +73,7 @@ class DummyPurePathTest(unittest.TestCase):
 
     def setUp(self):
         p = self.cls('a')
-        self.pathmod = p.pathmod
+        self.pathmod = p._pathmod
         self.sep = self.pathmod.sep
         self.altsep = self.pathmod.altsep
 
@@ -96,7 +96,7 @@ class DummyPurePathTest(unittest.TestCase):
 
     def test_different_pathmods_unequal(self):
         p = self.cls('a')
-        if p.pathmod is posixpath:
+        if p._pathmod is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
@@ -104,7 +104,7 @@ class DummyPurePathTest(unittest.TestCase):
 
     def test_different_pathmods_unordered(self):
         p = self.cls('a')
-        if p.pathmod is posixpath:
+        if p._pathmod is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
@@ -874,7 +874,7 @@ class DummyPathTest(DummyPurePathTest):
 
     def setUp(self):
         super().setUp()
-        pathmod = self.cls.pathmod
+        pathmod = self.cls._pathmod
         p = self.cls(self.base)
         p.mkdir(parents=True)
         p.joinpath('dirA').mkdir()

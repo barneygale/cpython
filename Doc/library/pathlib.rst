@@ -303,13 +303,6 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. attribute:: PurePath.pathmod
-
-   The implementation of the :mod:`os.path` module used for low-level path
-   operations: either :mod:`posixpath` or :mod:`ntpath`.
-
-   .. versionadded:: 3.13
-
 .. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::

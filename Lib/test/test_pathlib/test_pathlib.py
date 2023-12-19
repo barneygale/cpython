@@ -953,7 +953,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(type(p), expected)
 
     def test_unsupported_pathmod(self):
-        if self.cls.pathmod is os.path:
+        if self.cls._pathmod is os.path:
             self.skipTest("path flavour is supported")
         else:
             self.assertRaises(pathlib.UnsupportedOperation, self.cls)
@@ -1456,9 +1456,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_is_junction(self):
         P = self.cls(self.base)
 
-        with mock.patch.object(P.pathmod, 'isjunction'):
-            self.assertEqual(P.is_junction(), P.pathmod.isjunction.return_value)
-            P.pathmod.isjunction.assert_called_once_with(P)
+        with mock.patch.object(P._pathmod, 'isjunction'):
+            self.assertEqual(P.is_junction(), P._pathmod.isjunction.return_value)
+            P._pathmod.isjunction.assert_called_once_with(P)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     @unittest.skipIf(sys.platform == "vxworks",

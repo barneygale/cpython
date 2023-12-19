@@ -74,7 +74,7 @@ class PurePath(_abc.PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.pathmod is ntpath and self.pathmod is posixpath:
+                if arg._pathmod is ntpath and self._pathmod is posixpath:
                     # GH-103631: Convert separators for backwards compatibility.
                     paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
                 else:
@@ -113,7 +113,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            if _abc._is_case_sensitive(self.pathmod):
+            if _abc._is_case_sensitive(self._pathmod):
                 self._str_normcase_cached = str(self)
             else:
                 self._str_normcase_cached = str(self).lower()
@@ -129,7 +129,7 @@ class PurePath(_abc.PurePathBase):
     def __eq__(self, other):
         if not isinstance(other, PurePath):
             return NotImplemented
-        return self._str_normcase == other._str_normcase and self.pathmod is other.pathmod
+        return self._str_normcase == other._str_normcase and self._pathmod is other._pathmod
 
     @property
     def _parts_normcase(self):
@@ -137,26 +137,26 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._parts_normcase_cached
         except AttributeError:
-            self._parts_normcase_cached = self._str_normcase.split(self.pathmod.sep)
+            self._parts_normcase_cached = self._str_normcase.split(self._pathmod.sep)
             return self._parts_normcase_cached
 
     def __lt__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
             return NotImplemented
         return self._parts_normcase < other._parts_normcase
 
     def __le__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
             return NotImplemented
         return self._parts_normcase <= other._parts_normcase
 
     def __gt__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
             return NotImplemented
         return self._parts_normcase > other._parts_normcase
 
     def __ge__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self._pathmod is not other._pathmod:
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
@@ -193,7 +193,7 @@ class PurePosixPath(PurePath):
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    pathmod = posixpath
+    _pathmod = posixpath
     __slots__ = ()
 
 
@@ -203,7 +203,7 @@ class PureWindowsPath(PurePath):
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    pathmod = ntpath
+    _pathmod = ntpath
     __slots__ = ()
 
 
@@ -305,7 +305,7 @@ class Path(_abc.PathBase, PurePath):
         drive, root, rel = os.path.splitroot(cwd)
         if not rel:
             return self._from_parsed_parts(drive, root, self._tail)
-        tail = rel.split(self.pathmod.sep)
+        tail = rel.split(self._pathmod.sep)
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
 

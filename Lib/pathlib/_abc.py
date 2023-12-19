@@ -204,7 +204,7 @@ class PurePathBase:
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = os.path
+    _pathmod = os.path
 
     def __init__(self, *paths):
         self._raw_paths = paths
@@ -221,11 +221,11 @@ class PurePathBase:
     def _parse_path(cls, path):
         if not path:
             return '', '', []
-        sep = cls.pathmod.sep
-        altsep = cls.pathmod.altsep
+        sep = cls._pathmod.sep
+        altsep = cls._pathmod.altsep
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = cls.pathmod.splitroot(path)
+        drv, root, rel = cls._pathmod.splitroot(path)
         if not root and drv.startswith(sep) and not drv.endswith(sep):
             drv_parts = drv.split(sep)
             if len(drv_parts) == 4 and drv_parts[2] not in '?.':
@@ -244,7 +244,7 @@ class PurePathBase:
         elif len(paths) == 1:
             path = paths[0]
         else:
-            path = self.pathmod.join(*paths)
+            path = self._pathmod.join(*paths)
         drv, root, tail = self._parse_path(path)
         self._drv = drv
         self._root = root
@@ -262,10 +262,10 @@ class PurePathBase:
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
         if drv or root:
-            return drv + root + cls.pathmod.sep.join(tail)
-        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
+            return drv + root + cls._pathmod.sep.join(tail)
+        elif tail and cls._pathmod.splitdrive(tail[0])[0]:
             tail = ['.'] + tail
-        return cls.pathmod.sep.join(tail)
+        return cls._pathmod.sep.join(tail)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -280,7 +280,7 @@ class PurePathBase:
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
-        return str(self).replace(self.pathmod.sep, '/')
+        return str(self).replace(self._pathmod.sep, '/')
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -364,7 +364,7 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        m = self.pathmod
+        m = self._pathmod
         if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
             raise ValueError(f"Invalid name {name!r}")
         tail = self._tail.copy()
@@ -483,22 +483,22 @@ class PurePathBase:
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        if self.pathmod is ntpath:
+        if self._pathmod is ntpath:
             # ntpath.isabs() is defective - see GH-44626.
             return bool(self.drive and self.root)
-        elif self.pathmod is posixpath:
+        elif self._pathmod is posixpath:
             # Optimization: work with raw paths on POSIX.
             for path in self._raw_paths:
                 if path.startswith('/'):
                     return True
             return False
         else:
-            return self.pathmod.isabs(str(self))
+            return self._pathmod.isabs(str(self))
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        if self.pathmod is posixpath or not self._tail:
+        if self._pathmod is posixpath or not self._tail:
             return False
 
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -518,8 +518,8 @@ class PurePathBase:
         if not isinstance(path_pattern, PurePathBase):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.pathmod)
-        sep = path_pattern.pathmod.sep
+            case_sensitive = _is_case_sensitive(self._pathmod)
+        sep = path_pattern._pathmod.sep
         pattern_str = str(path_pattern)
         if path_pattern.drive or path_pattern.root:
             pass
@@ -801,7 +801,7 @@ class PathBase(PurePathBase):
         path_str = str(self)
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
+            path_str = f'{path_str}{self._pathmod.sep}{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
         else:
@@ -836,7 +836,7 @@ class PathBase(PurePathBase):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
         pattern_parts = path_pattern._tail.copy()
-        if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
+        if pattern[-1] in (self._pathmod.sep, self._pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
         if pattern_parts[-1] == '**':
@@ -850,7 +850,7 @@ class PathBase(PurePathBase):
 
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
-            case_sensitive = _is_case_sensitive(self.pathmod)
+            case_sensitive = _is_case_sensitive(self._pathmod)
 
         # If symlinks are handled consistently, and the pattern does not
         # contain '..' components, then we can use a 'walk-and-match' strategy
@@ -861,7 +861,7 @@ class PathBase(PurePathBase):
         # do not perform any filesystem access, which can be much faster!
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
-        sep = self.pathmod.sep
+        sep = self._pathmod.sep
         paths = iter([self] if self.is_dir() else [])
         part_idx = 0
         while part_idx < len(pattern_parts):
