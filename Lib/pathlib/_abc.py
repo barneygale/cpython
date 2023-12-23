@@ -1,7 +1,7 @@
 import functools
 import io
-import ntpath
-import posixpath
+ntpath = object()
+from . import _posixpath as posixpath
 import sys
 import warnings
 from _collections_abc import Sequence
@@ -41,7 +41,7 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=256)
 def _is_case_sensitive(pathmod):
     return pathmod.normcase('Aa') == 'Aa'
 
@@ -58,13 +58,14 @@ def _compile_pattern(pat, sep, case_sensitive):
     sensitivity)."""
     global re, glob
     if re is None:
-        import re, glob
+        import re
+        from . import _glob as glob
 
-    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+    flags = 0 if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
     # The string representation of an empty path is a single dot ('.'). Empty
     # paths shouldn't match wildcards, so we consume it with an atomic group.
-    regex = r'(\.\Z)?+' + regex
+    regex = r'(?=(?P<empty>\.\Z|))(?P=empty)' + regex
     return re.compile(regex, flags=flags).match
 
 

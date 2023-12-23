@@ -5,11 +5,16 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
-import posixpath
+from pathlib_abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib_abc import _posixpath as posixpath
+import contextlib
 
-from test.support import set_recursion_limit
-from test.support.os_helper import TESTFN
+
+@contextlib.contextmanager
+def set_recursion_limit(limit):
+    yield
+
+TESTFN = "TESTFN"
 
 
 class UnsupportedOperationTest(unittest.TestCase):
