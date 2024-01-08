@@ -4,7 +4,6 @@ import pathlib
 ntpath = object()
 from . import _posixpath as posixpath
 import sys
-from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from itertools import chain
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -12,9 +11,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 #
 # Internals
 #
-
-# Maximum number of symlinks to follow in PathBase.resolve()
-_MAX_SYMLINKS = 40
 
 # Reference for Windows paths can be found at
 # https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
@@ -139,35 +135,6 @@ class UnsupportedOperation(NotImplementedError):
     a path object.
     """
     pass
-
-
-class _PathParents(Sequence):
-    """This object provides sequence-like access to the logical ancestors
-    of a path.  Don't try to construct it yourself."""
-    __slots__ = ('_path', '_drv', '_root', '_tail')
-
-    def __init__(self, path):
-        self._path = path
-        self._drv = path.drive
-        self._root = path.root
-        self._tail = path._tail
-
-    def __len__(self):
-        return len(self._tail)
-
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return tuple(self[i] for i in range(*idx.indices(len(self))))
-
-        if idx >= len(self) or idx < -len(self):
-            raise IndexError(idx)
-        if idx < 0:
-            idx += len(self)
-        return self._path._from_parsed_parts(self._drv, self._root,
-                                             self._tail[:-idx - 1])
-
-    def __repr__(self):
-        return "<{}.parents>".format(type(self._path).__name__)
 
 
 class PurePathBase(abc.ABC):
@@ -316,10 +283,10 @@ class PurePathBase(abc.ABC):
     @property
     def name(self):
         """The final path component, if any."""
-        tail = self._tail
-        if not tail:
+        path_str = str(self)
+        if not path_str or path_str == '.':
             return ''
-        return tail[-1]
+        return self.pathmod.basename(path_str)
 
     @property
     def suffix(self):
@@ -363,11 +330,10 @@ class PurePathBase(abc.ABC):
         m = self.pathmod
         if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
             raise ValueError(f"Invalid name {name!r}")
-        tail = self._tail.copy()
-        if not tail:
+        parent, old_name = m.split(str(self))
+        if not old_name or old_name == '.':
             raise ValueError(f"{self!r} has an empty name")
-        tail[-1] = name
-        return self._from_parsed_parts(self.drive, self.root, tail)
+        return self.with_segments(parent, name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -405,7 +371,7 @@ class PurePathBase(abc.ABC):
         else:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return self._from_parsed_parts('', '', parts)
+        return self.with_segments(*parts)
 
     def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
@@ -446,21 +412,26 @@ class PurePathBase(abc.ABC):
     @property
     def parent(self):
         """The logical parent of the path."""
-        drv = self.drive
-        root = self.root
-        tail = self._tail
-        if not tail:
-            return self
-        path = self._from_parsed_parts(drv, root, tail[:-1])
-        path._resolving = self._resolving
-        return path
+        path = str(self)
+        parent = self.pathmod.dirname(path)
+        if path != parent:
+            parent = self.with_segments(parent)
+            parent._resolving = self._resolving
+            return parent
+        return self
 
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        # The value of this property should not be cached on the path object,
-        # as doing so would introduce a reference cycle.
-        return _PathParents(self)
+        dirname = self.pathmod.dirname
+        path = str(self)
+        parent = dirname(path)
+        parents = []
+        while path != parent:
+            parents.append(self.with_segments(parent))
+            path = parent
+            parent = dirname(path)
+        return tuple(parents)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
@@ -528,6 +499,9 @@ class PathBase(PurePathBase):
     such as paths in archive files or on remote storage systems.
     """
     __slots__ = ()
+
+    # Maximum number of symlinks to follow in resolve()
+    _max_symlinks = 40
 
     @classmethod
     def _unsupported(cls, method_name):
@@ -1000,7 +974,7 @@ class PathBase(PurePathBase):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
-                        if link_count >= _MAX_SYMLINKS:
+                        if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", str(self))
                         target, target_parts = next_path.readlink()._split_stack()
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
