@@ -69,9 +69,6 @@ def _compile_pattern(pat, sep, case_sensitive):
 
     flags = 0 if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
-    # The string representation of an empty path is a single dot ('.'). Empty
-    # paths shouldn't match wildcards, so we consume it with an atomic group.
-    regex = r'(?=(?P<empty>\.\Z|))(?P=empty)' + regex
     return re.compile(regex, flags=flags).match
 
 
