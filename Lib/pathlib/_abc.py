@@ -911,10 +911,7 @@ class PathBase(PurePathBase):
         try:
             path = path.absolute()
         except UnsupportedOperation:
-            path_tail = []
-        else:
-            path_root, path_tail = path._stack
-            path_tail.reverse()
+            pass
 
         # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
         # and (in non-strict mode) we can improve performance by not calling `stat()`.
@@ -925,34 +922,30 @@ class PathBase(PurePathBase):
             if not part or part == '.':
                 continue
             if part == '..':
-                if not path_tail:
-                    if path_root:
-                        # Delete '..' segment immediately following root
-                        continue
-                elif path_tail[-1] != '..':
+                if str(path) and path.name != '..':
                     # Delete '..' segment and its predecessor
-                    path_tail.pop()
-                    continue
-            path_tail.append(part)
-            if querying and part != '..':
-                path = self.with_segments(path_root + self.pathmod.sep.join(path_tail))
-                path._resolving = True
+                    path = path.parent
+                else:
+                    # Append '..' segment
+                    path = path._make_child_relpath(part)
+                continue
+            next_path = path._make_child_relpath(part)
+            if querying:
                 try:
-                    st = path.stat(follow_symlinks=False)
+                    next_path._resolving = True
+                    st = next_path.stat(follow_symlinks=False)
                     if S_ISLNK(st.st_mode):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
                         if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
-                        target_root, target_parts = path.readlink()._stack
+                        target_root, target_parts = next_path.readlink()._stack
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
                         # path to its uppermost parent (like '/').
                         if target_root:
-                            path_root = target_root
-                            path_tail.clear()
-                        else:
-                            path_tail.pop()
+                            path = path.with_segments(target_root)
+
                         # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
                         # the stack of unresolved path parts.
                         parts.extend(target_parts)
@@ -964,7 +957,9 @@ class PathBase(PurePathBase):
                         raise
                     else:
                         querying = False
-        return self.with_segments(path_root + self.pathmod.sep.join(path_tail))
+            path = next_path
+        path._resolving = False
+        return path
 
     def symlink_to(self, target, target_is_directory=False):
         """
