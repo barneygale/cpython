@@ -939,7 +939,10 @@ class PathBase(PurePathBase):
                 try:
                     if next_path in link_targets:
                         # Use the cached resolved symlink target
-                        path = link_targets[next_path]
+                        target = link_targets[next_path]
+                        if target is None:
+                            raise OSError(ELOOP, "Symlink loop", self._raw_path)
+                        path = target
                         link_count += 1
                         if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
@@ -959,6 +962,7 @@ class PathBase(PurePathBase):
                             path = path.with_segments(target_root)
 
                         # Add the symlink itself to the stack, so we can record its resolved target
+                        link_targets[next_path] = None
                         parts.append(next_path)
 
                         # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
