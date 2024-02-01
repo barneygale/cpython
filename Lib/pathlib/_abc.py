@@ -917,8 +917,13 @@ class PathBase(PurePathBase):
         # and (in non-strict mode) we can improve performance by not calling `stat()`.
         querying = strict or getattr(self.readlink, '_supported', True)
         link_count = 0
+        link_targets = {}
         while parts:
             part = parts.pop()
+            if isinstance(part, PathBase):
+                # Cache the resolved symlink target
+                link_targets[part] = path
+                continue
             if not part or part == '.':
                 continue
             if part == '..':
@@ -932,6 +937,13 @@ class PathBase(PurePathBase):
             next_path = path._make_child_relpath(part)
             if querying:
                 try:
+                    if next_path in link_targets:
+                        # Use the cached resolved symlink target
+                        path = link_targets[next_path]
+                        link_count += 1
+                        if link_count >= self._max_symlinks:
+                            raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
+                        continue
                     next_path._resolving = True
                     st = next_path.stat(follow_symlinks=False)
                     if S_ISLNK(st.st_mode):
@@ -946,12 +958,13 @@ class PathBase(PurePathBase):
                         if target_root:
                             path = path.with_segments(target_root)
 
+                        # Add the symlink itself to the stack, so we can record its resolved target
+                        parts.append(next_path)
+
                         # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
                         # the stack of unresolved path parts.
                         parts.extend(target_parts)
                         continue
-                    elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", self._raw_path)
                 except OSError:
                     if strict:
                         raise
