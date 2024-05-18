@@ -491,8 +491,16 @@ def _joinrealpath(path, rest, strict, seen):
             else:
                 # Return already resolved part + rest of the path unchanged.
                 return join(newpath, rest), False
+        try:
+            target = os.readlink(newpath)
+        except OSError:
+            if strict:
+                raise
+            else:
+                # Return already resolved part + rest of the path unchanged.
+                return join(newpath, rest), False
         seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
+        path, ok = _joinrealpath(path, target, strict, seen)
         if not ok:
             return join(path, rest), False
         seen[newpath] = path # resolved symlink
